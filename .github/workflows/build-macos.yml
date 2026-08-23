@@ -40,6 +40,10 @@ jobs:
         working-directory: node-js
         run: npm install
 
+      - name: "Compilar o servidor autocontido (sidecar, sem depender de Node.js instalado)"
+        working-directory: node-js
+        run: npm run build:sidecar:mac
+
       - name: Instalar o Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
 
