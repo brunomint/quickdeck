@@ -1,8 +1,8 @@
 [package]
 name = "app"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "1.0.0"
+description = "QuickDeck — painel de atalhos remoto (celular -> computador) via rede local"
+authors = ["Bruno Fragoso"]
 license = ""
 repository = ""
 edition = "2021"
