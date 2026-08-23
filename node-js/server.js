@@ -17,8 +17,39 @@ function idJanelaValido(id, plataforma) {
     return /^[\p{L}\p{N} ._-]+$/u.test(id); // darwin: nome do processo
 }
 
+// Token de emparelhamento: gerado uma vez quando o servidor liga. Sem ele,
+// qualquer um na mesma rede (ou até um site malicioso que o navegador abra,
+// já que dá pra chamar localhost:3000 de qualquer página) conseguia criar
+// atalhos e disparar comandos. Agora, quem não está na própria máquina
+// precisa desse token — que só é revelado pra quem já está na própria
+// máquina (via /conexao e /qr) ou já recebeu o link (celular, depois de
+// escanear o QR uma vez).
+const crypto = require('crypto');
+const TOKEN = crypto.randomBytes(16).toString('hex');
+
+// Requisições vindas da própria máquina (a janela do QuickDeck, ou o próprio
+// navegador do dono usando localhost) são sempre confiáveis — não faz
+// sentido pedir token pra quem já está sentado no computador.
+function ehRequisicaoLocal(req) {
+    const ip = req.ip || '';
+    return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+}
+
+function tokenValido(req) {
+    return req.get('X-QuickDeck-Token') === TOKEN;
+}
+
+// Exige que a requisição seja local OU traga o token correto — usado nas
+// rotas que criam/editam atalhos ou disparam comandos/ações no sistema.
+function exigirAutorizacao(req, res, next) {
+    if (ehRequisicaoLocal(req) || tokenValido(req)) return next();
+    res.status(401).json({ status: 'erro', error: 'Não autorizado. Conecte pelo QR code em "Conectar celular".' });
+}
+
 const app = express();
-// CORS permite que o celular acesse o servidor sem bloqueios de segurança do navegador
+// CORS permite que a janela do app (que carrega os arquivos de um jeito
+// diferente de http://localhost:3000) consiga ler as respostas da API.
+app.set('trust proxy', false);
 app.use(cors());
 app.use(express.json());
 
@@ -97,16 +128,25 @@ const PORTA = 3000;
 
 // Rota que a própria janela consulta pra mostrar "conecte o celular em
 // http://IP:PORTA" — texto e, opcionalmente, um QR code (rota /qr).
+// Só a própria máquina pode pedir o link/QR de conexão — ele carrega o
+// token de emparelhamento, então se qualquer um na rede pudesse chamar essa
+// rota, teria como conseguir o token sem precisar olhar a tela do PC.
 app.get('/conexao', (req, res) => {
+    if (!ehRequisicaoLocal(req)) {
+        return res.status(403).json({ status: 'erro', error: 'Só disponível na própria máquina.' });
+    }
     const ip = pegarIPLocal();
-    res.json({ status: 'sucesso', ip, porta: PORTA, url: `http://${ip}:${PORTA}/index.html` });
+    res.json({ status: 'sucesso', ip, porta: PORTA, url: `http://${ip}:${PORTA}/index.html?token=${TOKEN}` });
 });
 
 // Gera um QR code (PNG) que aponta pro endereço da janela na rede local,
 // pra escanear com a câmera do celular em vez de digitar o IP na mão.
 app.get('/qr', async (req, res) => {
+    if (!ehRequisicaoLocal(req)) {
+        return res.status(403).json({ status: 'erro', error: 'Só disponível na própria máquina.' });
+    }
     const ip = pegarIPLocal();
-    const url = `http://${ip}:${PORTA}/index.html`;
+    const url = `http://${ip}:${PORTA}/index.html?token=${TOKEN}`;
     try {
         const png = await QRCode.toBuffer(url, { width: 220, margin: 1 });
         res.set('Content-Type', 'image/png');
@@ -133,7 +173,7 @@ app.get('/atalhos', (req, res) => {
 // Cria um atalho novo, direto pela interface (janela do app). Como quem
 // preenche o formulário está na própria máquina que vai executar o comando,
 // pedimos só o comando da plataforma atual (process.platform) — não os três.
-app.post('/atalhos', (req, res) => {
+app.post('/atalhos', exigirAutorizacao, (req, res) => {
     const { nome, icone, comando } = req.body;
 
     if (!nome || !comando) {
@@ -182,7 +222,7 @@ app.get('/atalhos/:id', (req, res) => {
 });
 
 // Edita um atalho existente (nome, ícone e/ou comando da plataforma atual).
-app.put('/atalhos/:id', (req, res) => {
+app.put('/atalhos/:id', exigirAutorizacao, (req, res) => {
     const { nome, icone, comando } = req.body;
 
     if (!nome || !comando) {
@@ -210,7 +250,7 @@ app.put('/atalhos/:id', (req, res) => {
 });
 
 // Exclui um atalho pelo id.
-app.delete('/atalhos/:id', (req, res) => {
+app.delete('/atalhos/:id', exigirAutorizacao, (req, res) => {
     try {
         const atalhos = carregarAtalhos();
         const restantes = atalhos.filter(a => a.id !== req.params.id);
@@ -360,7 +400,7 @@ function comandoParaExecutar(comando, plataforma) {
 
 // Rota dinâmica: recebe o id de um atalho salvo (ex: "navegador", "editor")
 // e dispara o comando mapeado pra esse atalho no sistema operacional atual.
-app.get('/launch/:appName', (req, res) => {
+app.get('/launch/:appName', exigirAutorizacao, (req, res) => {
     const appName = req.params.appName;
     const plataforma = process.platform; // 'win32' | 'darwin' | 'linux'
 
@@ -464,7 +504,7 @@ app.get('/apps-abertos', (req, res) => {
 
 // Fecha uma janela específica, identificada pelo "id" retornado em
 // /apps-abertos (não pelo título — evita fechar a janela errada).
-app.get('/fechar/:id', (req, res) => {
+app.get('/fechar/:id', exigirAutorizacao, (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
 
@@ -496,7 +536,7 @@ app.get('/fechar/:id', (req, res) => {
 });
 
 // Minimiza uma janela específica, identificada pelo "id" de /apps-abertos.
-app.get('/minimizar/:id', (req, res) => {
+app.get('/minimizar/:id', exigirAutorizacao, (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
 
@@ -535,7 +575,7 @@ app.get('/minimizar/:id', (req, res) => {
 // /apps-abertos — usado quando o usuário clica no título de um app na aba
 // Recentes/Dock, pra trazê-lo de volta (mesmo minimizado) em vez de abrir
 // outra instância.
-app.get('/ativar/:id', (req, res) => {
+app.get('/ativar/:id', exigirAutorizacao, (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
 
@@ -580,7 +620,7 @@ const execPromise = require('util').promisify(exec);
 // um atalho, e alterna entre minimizada/restaurada — usado quando o usuário
 // dá duplo clique num atalho (um clique = abrir; dois cliques = minimizar
 // ou trazer de volta o que já está aberto).
-app.get('/toggle-minimizar-atalho/:atalhoId', async (req, res) => {
+app.get('/toggle-minimizar-atalho/:atalhoId', exigirAutorizacao, async (req, res) => {
     const atalhos = carregarAtalhos();
     const atalho = atalhos.find(a => a.id === req.params.atalhoId);
     const plataforma = process.platform;

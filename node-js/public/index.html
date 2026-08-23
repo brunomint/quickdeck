@@ -134,6 +134,21 @@
     </div>
 
     <script>
+        // Token de emparelhamento: chega pela URL na primeira vez que o
+        // celular escaneia o QR code (?token=...) e fica salvo no
+        // localStorage pras próximas vezes. A própria máquina (janela do
+        // QuickDeck, navegador no localhost) nem precisa disso — o servidor
+        // já confia em quem está localmente.
+        (function guardarTokenDaUrl() {
+            const tokenNaUrl = new URLSearchParams(window.location.search).get('token');
+            if (tokenNaUrl) localStorage.setItem('quickdeck_token', tokenNaUrl);
+        })();
+
+        function cabecalhosAutorizacao() {
+            const token = localStorage.getItem('quickdeck_token');
+            return token ? { 'X-QuickDeck-Token': token } : {};
+        }
+
         function mudarAba(aba) {
             const elAtalhos = document.getElementById('aba-atalhos-wrapper');
             const elRecentes = document.getElementById('aba-recentes');
@@ -406,7 +421,7 @@
 
             fetch(url, {
                 method: metodo,
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...cabecalhosAutorizacao() },
                 body: JSON.stringify({ nome, icone, comando }),
             })
                 .then(response => response.json())
@@ -421,7 +436,7 @@
             confirmarPersonalizado(`Excluir o atalho "${nome}"?`, () => {
                 const servidorIP = window.location.hostname;
 
-                fetch(`http://${servidorIP}:3000/atalhos/${id}`, { method: 'DELETE' })
+                fetch(`http://${servidorIP}:3000/atalhos/${id}`, { method: 'DELETE', headers: cabecalhosAutorizacao() })
                     .then(response => response.json())
                     .then(() => carregarAtalhos())
                     .catch(error => console.error('Erro ao excluir atalho:', error));
@@ -453,7 +468,7 @@
             // Descobre automaticamente se está rodando no PC ou no celular na mesma rede
             const servidorIP = window.location.hostname;
 
-            fetch(`http://${servidorIP}:3000/launch/${appName}`)
+            fetch(`http://${servidorIP}:3000/launch/${appName}`, { headers: cabecalhosAutorizacao() })
                 .then(response => response.json())
                 .then(data => console.log('Comando disparado com sucesso:', data))
                 .catch(error => console.error('Falha na comunicação com o servidor:', error));
@@ -478,7 +493,7 @@
 
         function toggleMinimizarAtalho(atalhoId) {
             const servidorIP = window.location.hostname;
-            fetch(`http://${servidorIP}:3000/toggle-minimizar-atalho/${atalhoId}`)
+            fetch(`http://${servidorIP}:3000/toggle-minimizar-atalho/${atalhoId}`, { headers: cabecalhosAutorizacao() })
                 .then(response => response.json())
                 .then(data => console.log('Toggle minimizar/restaurar:', data.acao))
                 .catch(error => console.error('Erro ao minimizar/restaurar:', error));
@@ -536,20 +551,20 @@
 
         function ativarJanela(id) {
             const servidorIP = window.location.hostname;
-            fetch(`http://${servidorIP}:3000/ativar/${encodeURIComponent(id)}`)
+            fetch(`http://${servidorIP}:3000/ativar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                 .catch(error => console.error('Erro ao ativar janela:', error));
         }
 
         function minimizarJanela(id) {
             const servidorIP = window.location.hostname;
-            fetch(`http://${servidorIP}:3000/minimizar/${encodeURIComponent(id)}`)
+            fetch(`http://${servidorIP}:3000/minimizar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                 .catch(error => console.error('Erro ao minimizar janela:', error));
         }
 
         function fecharJanela(id, titulo) {
             confirmarPersonalizado(`Fechar "${titulo}"?`, () => {
                 const servidorIP = window.location.hostname;
-                fetch(`http://${servidorIP}:3000/fechar/${encodeURIComponent(id)}`)
+                fetch(`http://${servidorIP}:3000/fechar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                     .then(() => carregarAppsAbertos())
                     .catch(error => console.error('Erro ao fechar janela:', error));
             }, 'Fechar');
