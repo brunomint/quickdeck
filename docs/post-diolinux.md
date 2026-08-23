@@ -1,0 +1,53 @@
+# [Projeto] QuickDeck — transformei meu celular num Stream Deck, de graça
+
+Fala, pessoal!
+
+Queria compartilhar um projeto pessoal que fui construindo aos poucos:
+o **QuickDeck**, um painel de atalhos remoto que transforma o celular num
+controle pro computador — a ideia é parecida com a de um Stream Deck físico
+(aquele teclado de botões programáveis que streamer usa), só que sem
+comprar nenhum hardware.
+
+![QuickDeck](screenshot.png)
+
+## Como funciona
+
+O QuickDeck sobe um servidor na sua rede local. Você abre o app no PC,
+escaneia um QR code com o celular, e pronto — os botões que aparecem na tela
+do celular disparam comandos no computador. Tudo pela mesma rede Wi-Fi, sem
+depender de internet, conta ou serviço de terceiros.
+
+Alguns recursos que fui adicionando no caminho:
+
+- Criar atalhos escolhendo entre os programas já instalados (ou digitando o
+  comando manualmente, ou até colando um link direto)
+- Sincronização em tempo real entre todos os dispositivos conectados
+- Ver e controlar as janelas abertas do PC (minimizar/restaurar/fechar) pelo
+  próprio celular
+- Layout que se adapta ao celular em pé ou deitado, com paginação estilo
+  Stream Deck físico
+- Modo de edição — os controles de apagar/editar ficam escondidos até você
+  destravar, pra evitar toque acidental
+- Emparelhamento por token, então só quem escaneou o QR consegue mandar
+  comandos
+
+## Linux em primeiro lugar (bom, quase)
+
+Já que é pra postar aqui: o app roda em Windows, macOS e Linux. No Linux
+especificamente, tem `.deb`, `.rpm`, `.AppImage`, e um `instalar.sh` que
+detecta a distro sozinho e resolve as dependências (`wmctrl`/`xdotool`, só
+usados pra gerenciar janelas). Testei no Pop!_OS; feedback de quem usa outra
+distro é muito bem-vindo.
+
+O app em si é feito com [Tauri](https://tauri.app/) (Rust) em vez de
+Electron — bem mais leve. O backend é Node.js/Express, e a interface é
+HTML/JS puro com Tailwind, sem build step nenhum.
+
+## Onde pegar
+
+Código aberto (MIT) e instaladores das três plataformas aqui:
+**https://github.com/brunomint/quickdeck**
+
+É um projeto bem novo e feito nas horas vagas, então esperem arestas — mas
+funciona, e adoraria ouvir sugestões, bugs, ou só a opinião de vocês sobre a
+ideia.
