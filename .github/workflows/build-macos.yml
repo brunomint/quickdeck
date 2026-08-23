@@ -43,7 +43,7 @@ jobs:
       - name: Instalar o Tauri CLI
         run: cargo install tauri-cli --version "^2" --locked
 
-      - name: Compilar o instalador do QuickDeck (universal: Intel + Apple Silicon)
+      - name: "Compilar o instalador do QuickDeck (universal: Intel + Apple Silicon)"
         working-directory: node-js
         run: cargo tauri build --target universal-apple-darwin
 
