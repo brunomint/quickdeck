@@ -10,7 +10,7 @@ Assim nasceu o **QuickDeck**, um painel de atalhos remoto que transforma o
 celular num controle pro computador — a ideia é parecida com a de um Stream
 Deck físico, só que sem comprar nenhum hardware.
 
-![QuickDeck](screenshot.png)
+![Clicando num atalho pelo celular e o programa abrindo no PC](demo.gif)
 
 ## Como funciona
 
