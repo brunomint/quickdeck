@@ -145,8 +145,40 @@ else
     instalar_appimage
 fi
 
+# Confere de verdade se instalou, em vez de só assumir porque o comando
+# anterior não deu erro.
+confirmar_instalacao() {
+    local achou_programa=false
+
+    if command -v dpkg >/dev/null 2>&1 && dpkg -s quickdeck >/dev/null 2>&1; then
+        echo "✔ Pacote 'quickdeck' registrado no dpkg."
+        achou_programa=true
+    elif command -v rpm >/dev/null 2>&1 && rpm -q quickdeck >/dev/null 2>&1; then
+        echo "✔ Pacote 'quickdeck' registrado no rpm."
+        achou_programa=true
+    elif [ -x "$HOME/Applications/QuickDeck.AppImage" ]; then
+        echo "✔ AppImage instalado em $HOME/Applications/QuickDeck.AppImage."
+        achou_programa=true
+    fi
+
+    if [ -f "/usr/share/applications/quickdeck.desktop" ] || [ -f "$HOME/.local/share/applications/quickdeck.desktop" ]; then
+        echo "✔ Atalho no menu de aplicativos encontrado."
+    else
+        echo "⚠ Não encontrei o atalho no menu de aplicativos (pode ser preciso reiniciar a sessão pra aparecer)."
+    fi
+
+    if [ "$achou_programa" = false ]; then
+        echo
+        echo "⚠ Não consegui confirmar que o QuickDeck foi instalado. Algo deu errado — confira as mensagens acima."
+        exit 1
+    fi
+}
+
+echo
+confirmar_instalacao
+
 echo
 instalar_dependencias_janelas
 
 echo
-echo "Instalação concluída! Procure por 'QuickDeck' no menu de aplicativos."
+echo "Instalação concluída de verdade! Procure por 'QuickDeck' no menu de aplicativos."
