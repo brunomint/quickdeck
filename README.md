@@ -102,6 +102,11 @@ cargo install tauri-cli --version "^2"
 cargo tauri dev
 ```
 
+## ☕ Apoie o projeto
+
+Se o QuickDeck foi útil pra você, considere apoiar em
+[ko-fi.com/brunofragosodealmeida](https://ko-fi.com/brunofragosodealmeida).
+
 ## Licença
 
 [MIT](LICENSE) — use, modifique e distribua à vontade.
