@@ -80,17 +80,32 @@ function notificarAtalhosAtualizados() {
     }
 }
 
+// Onde o atalhos.json de verdade fica salvo. No app instalado (empacotado
+// com 'pkg'), a pasta do próprio executável pode não ter permissão de
+// escrita (ex: Program Files no Windows) — por isso o Tauri passa uma pasta
+// de dados do usuário via variável de ambiente. Rodando direto com
+// 'node server.js' (desenvolvimento), cai de volta pra pasta do projeto.
+const DIR_DADOS = process.env.QUICKDECK_DATA_DIR || __dirname;
+const CAMINHO_ATALHOS = path.join(DIR_DADOS, 'atalhos.json');
+
 // Lê a lista de atalhos direto de atalhos.json a cada chamada — assim editar
 // esse arquivo (adicionar/remover um atalho) não exige reiniciar o servidor.
 // Cada atalho tem um "id" semântico, nome/ícone pra exibir no celular, e o
 // comando real por sistema operacional.
 function carregarAtalhos() {
-    const conteudo = fs.readFileSync(path.join(__dirname, 'atalhos.json'), 'utf-8');
+    if (!fs.existsSync(CAMINHO_ATALHOS)) {
+        // Primeira vez rodando nessa pasta de dados: semeia com os atalhos
+        // padrão (embutidos no próprio binário, então sempre existem).
+        const padrao = fs.readFileSync(path.join(__dirname, 'atalhos.default.json'), 'utf-8');
+        fs.mkdirSync(DIR_DADOS, { recursive: true });
+        fs.writeFileSync(CAMINHO_ATALHOS, padrao);
+    }
+    const conteudo = fs.readFileSync(CAMINHO_ATALHOS, 'utf-8');
     return JSON.parse(conteudo);
 }
 
 function salvarAtalhos(atalhos) {
-    fs.writeFileSync(path.join(__dirname, 'atalhos.json'), JSON.stringify(atalhos, null, 2));
+    fs.writeFileSync(CAMINHO_ATALHOS, JSON.stringify(atalhos, null, 2));
 }
 
 // Gera um id simples e único a partir do nome digitado (ex: "Meu App" -> "meu-app")

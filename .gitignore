@@ -5,6 +5,11 @@ node-js/node_modules/
 node-js/src-tauri/target/
 node-js/src-tauri/gen/schemas/
 
+# Binário do servidor empacotado como sidecar (gerado com 'pkg' via
+# 'npm run build:sidecar:*') — recompilado antes de cada build do Tauri,
+# não faz sentido versionar.
+node-js/src-tauri/binaries/
+
 # Executáveis empacotados (.exe, .deb, .rpm, .AppImage etc.) — artefatos de
 # build, não código-fonte. Vão como anexo nas Releases do GitHub, não no git.
 node-js/dist/
