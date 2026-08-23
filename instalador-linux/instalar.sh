@@ -1,18 +1,42 @@
 #!/usr/bin/env bash
-# Instalador do QuickDeck pra Linux — detecta sua distro e instala o pacote
-# certo automaticamente, ou usa o AppImage como alternativa universal se a
-# distro não for baseada em Debian/Fedora, criando um atalho no menu de
-# aplicativos mesmo assim.
+# Instalador do QuickDeck pra Linux — baixa a versão mais recente direto do
+# GitHub e instala sozinho, detectando sua distro. Não precisa baixar nada
+# na mão antes, só rodar este script.
 #
-# Uso: ./instalar.sh (dentro da pasta que veio com o .deb/.rpm/.AppImage)
+# Uso:
+#   curl -fsSL https://raw.githubusercontent.com/brunomint/quickdeck/main/instalador-linux/instalar.sh | bash
+# ou baixe e rode: bash instalar.sh
 
 set -euo pipefail
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$DIR"
+REPO="brunomint/quickdeck"
+API_RELEASE="https://api.github.com/repos/$REPO/releases/latest"
 
 echo "=== Instalador do QuickDeck ==="
 echo
+
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Precisa do 'curl' instalado pra baixar os arquivos. Instale com o gerenciador de pacotes da sua distro e rode de novo."
+    exit 1
+fi
+
+echo "Consultando a versão mais recente no GitHub..."
+ASSETS_JSON="$(curl -fsSL "$API_RELEASE")"
+
+# Extrai a URL de download do primeiro asset cujo nome bate com o padrão
+# passado (ex: '_amd64\.deb$') — evita depender de 'jq', que nem sempre
+# vem instalado por padrão.
+url_do_asset() {
+    printf '%s\n' "$ASSETS_JSON" \
+        | grep -oE '"browser_download_url": *"[^"]+"' \
+        | sed -E 's/.*"(https:[^"]+)"/\1/' \
+        | grep -E "$1" \
+        | head -n1 || true
+}
+
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT
+cd "$TMPDIR"
 
 instalar_dependencias_janelas() {
     # wmctrl e xdotool são usados pra listar/fechar/minimizar janelas na aba
@@ -46,28 +70,31 @@ instalar_dependencias_janelas() {
 }
 
 instalar_appimage() {
-    local appimage
-    appimage="$(ls ./*.AppImage 2>/dev/null | head -n1)"
-    if [ -z "$appimage" ]; then
-        echo "Não achei um arquivo .AppImage nessa pasta."
+    local url
+    url="$(url_do_asset '_amd64\.AppImage$')"
+    if [ -z "$url" ]; then
+        echo "Não achei um .AppImage na última Release. Baixe manualmente em:"
+        echo "https://github.com/$REPO/releases/latest"
         exit 1
     fi
 
-    echo "Instalando via AppImage (funciona em qualquer distro Linux)..."
+    echo "Baixando o AppImage (funciona em qualquer distro Linux)..."
+    curl -fsSL -o quickdeck.AppImage "$url"
+    chmod +x quickdeck.AppImage
 
     local destino="$HOME/Applications"
     mkdir -p "$destino"
-    cp "$appimage" "$destino/QuickDeck.AppImage"
-    chmod +x "$destino/QuickDeck.AppImage"
+    cp quickdeck.AppImage "$destino/QuickDeck.AppImage"
 
-    # AppImage sozinho não aparece no menu de aplicativos — cria o atalho
-    # manualmente (ícone incluso nessa mesma pasta).
+    # AppImage sozinho não aparece no menu de aplicativos — baixa o ícone e
+    # cria o atalho manualmente.
     local dir_icones="$HOME/.local/share/icons"
     local dir_atalhos="$HOME/.local/share/applications"
     mkdir -p "$dir_icones" "$dir_atalhos"
-    if [ -f "./quickdeck.png" ]; then
-        cp "./quickdeck.png" "$dir_icones/quickdeck.png"
-    fi
+
+    local url_icone
+    url_icone="$(url_do_asset 'quickdeck\.png$')"
+    [ -n "$url_icone" ] && curl -fsSL -o "$dir_icones/quickdeck.png" "$url_icone"
 
     cat > "$dir_atalhos/quickdeck.desktop" <<EOF
 [Desktop Entry]
@@ -86,16 +113,34 @@ EOF
     echo "Pronto! O QuickDeck já aparece no menu de aplicativos."
 }
 
-# --- Detecta a distro e escolhe o formato certo ---
-if command -v apt-get >/dev/null 2>&1 && ls ./*.deb >/dev/null 2>&1; then
-    echo "Detectei uma distro baseada em Debian/Ubuntu — instalando o pacote .deb..."
-    sudo apt-get install -y "$(ls ./*.deb | head -n1)"
-elif command -v dnf >/dev/null 2>&1 && ls ./*.rpm >/dev/null 2>&1; then
-    echo "Detectei uma distro baseada em Fedora — instalando o pacote .rpm..."
-    sudo dnf install -y "$(ls ./*.rpm | head -n1)"
-elif command -v zypper >/dev/null 2>&1 && ls ./*.rpm >/dev/null 2>&1; then
-    echo "Detectei openSUSE — instalando o pacote .rpm..."
-    sudo zypper install -y "$(ls ./*.rpm | head -n1)"
+# --- Detecta a distro, baixa e instala o formato certo ---
+if command -v apt-get >/dev/null 2>&1; then
+    url="$(url_do_asset '_amd64\.deb$')"
+    if [ -z "$url" ]; then
+        echo "Não achei um .deb na última Release. Baixe manualmente em: https://github.com/$REPO/releases/latest"
+        exit 1
+    fi
+    echo "Detectei uma distro baseada em Debian/Ubuntu — baixando o pacote .deb..."
+    curl -fsSL -o quickdeck.deb "$url"
+    sudo apt-get install -y ./quickdeck.deb
+elif command -v dnf >/dev/null 2>&1; then
+    url="$(url_do_asset '\.x86_64\.rpm$')"
+    if [ -z "$url" ]; then
+        echo "Não achei um .rpm na última Release. Baixe manualmente em: https://github.com/$REPO/releases/latest"
+        exit 1
+    fi
+    echo "Detectei uma distro baseada em Fedora — baixando o pacote .rpm..."
+    curl -fsSL -o quickdeck.rpm "$url"
+    sudo dnf install -y ./quickdeck.rpm
+elif command -v zypper >/dev/null 2>&1; then
+    url="$(url_do_asset '\.x86_64\.rpm$')"
+    if [ -z "$url" ]; then
+        echo "Não achei um .rpm na última Release. Baixe manualmente em: https://github.com/$REPO/releases/latest"
+        exit 1
+    fi
+    echo "Detectei openSUSE — baixando o pacote .rpm..."
+    curl -fsSL -o quickdeck.rpm "$url"
+    sudo zypper install -y ./quickdeck.rpm
 else
     instalar_appimage
 fi
