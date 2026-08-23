@@ -5,8 +5,12 @@ node-js/node_modules/
 node-js/src-tauri/target/
 node-js/src-tauri/gen/schemas/
 
-# Executáveis empacotados (.exe, etc.) — artefatos de build, não código-fonte
+# Executáveis empacotados (.exe, .deb, .rpm, .AppImage etc.) — artefatos de
+# build, não código-fonte. Vão como anexo nas Releases do GitHub, não no git.
 node-js/dist/
+instalador-linux/*.deb
+instalador-linux/*.rpm
+instalador-linux/*.AppImage
 
 # Fotos de referência/inspiração — não fazem parte do projeto em si
 fotos/
