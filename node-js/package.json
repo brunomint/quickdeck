@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "build:sidecar:win": "pkg . --targets node18-win-x64 --output src-tauri/binaries/servidor-x86_64-pc-windows-msvc.exe",
-    "build:sidecar:mac": "pkg . --targets node18-macos-x64 --output src-tauri/binaries/servidor-universal-apple-darwin",
+    "build:sidecar:mac": "pkg . --targets node18-macos-x64 --output src-tauri/binaries/servidor-x86_64-apple-darwin && cp src-tauri/binaries/servidor-x86_64-apple-darwin src-tauri/binaries/servidor-aarch64-apple-darwin && cp src-tauri/binaries/servidor-x86_64-apple-darwin src-tauri/binaries/servidor-universal-apple-darwin",
     "build:sidecar:linux": "pkg . --targets node18-linux-x64 --output src-tauri/binaries/servidor-x86_64-unknown-linux-gnu"
   },
   "keywords": [],
