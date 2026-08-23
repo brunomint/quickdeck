@@ -8,6 +8,9 @@ node-js/src-tauri/gen/schemas/
 # Executáveis empacotados (.exe, etc.) — artefatos de build, não código-fonte
 node-js/dist/
 
+# Fotos de referência/inspiração — não fazem parte do projeto em si
+fotos/
+
 # Arquivos de sistema/editor
 .DS_Store
 *.log
