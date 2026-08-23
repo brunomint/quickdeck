@@ -17,6 +17,8 @@ escaneia um QR code com o celular, e pronto — os botões que aparecem na tela
 do celular disparam comandos no computador. Tudo pela mesma rede Wi-Fi, sem
 depender de internet, conta ou serviço de terceiros.
 
+![Conectar pelo celular](screenshot-conectar.png)
+
 Alguns recursos que fui adicionando no caminho:
 
 - Criar atalhos escolhendo entre os programas já instalados (ou digitando o
@@ -24,6 +26,8 @@ Alguns recursos que fui adicionando no caminho:
 - Sincronização em tempo real entre todos os dispositivos conectados
 - Ver e controlar as janelas abertas do PC (minimizar/restaurar/fechar) pelo
   próprio celular
+
+  ![Dock de janelas abertas](screenshot-dock.png)
 - Layout que se adapta ao celular em pé ou deitado, com paginação estilo
   Stream Deck físico
 - Modo de edição — os controles de apagar/editar ficam escondidos até você

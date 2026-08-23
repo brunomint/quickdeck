@@ -28,6 +28,8 @@ camada de segurança com token de emparelhamento.
   outros conectados atualizam sozinhos (Server-Sent Events), sem recarregar.
 - **Dock de janelas abertas** — veja o que está rodando e minimize, restaure
   ou feche direto pelo celular.
+
+  ![Dock de janelas abertas](docs/screenshot-dock.png)
 - **Layout responsivo** — a grade se adapta ao celular em pé ou deitado, com
   paginação estilo Stream Deck físico quando há muitos atalhos.
 - **Modo de edição** — os controles de editar/apagar ficam escondidos por
@@ -49,6 +51,8 @@ Releases](https://github.com/brunomint/quickdeck/releases/latest):
 Depois de instalado, abra o QuickDeck, clique em **"Conectar celular"** e
 escaneie o QR code com a câmera do celular (precisa estar na mesma rede
 Wi-Fi).
+
+![Conectar pelo celular](docs/screenshot-conectar.png)
 
 > **macOS:** como o app não é assinado digitalmente (isso custa uma
 > assinatura anual da Apple), na primeira abertura clique com o botão
