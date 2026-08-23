@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickDeck</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <!-- Tailwind CSS via CDN para estilização moderna e design limpo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 h-screen flex flex-col justify-between select-none text-white p-4">
+
+    <!-- Cabeçalho -->
+    <header class="text-center py-2 landscape:py-1 relative">
+        <h1 class="text-sm font-medium text-white/60 tracking-wider">QuickDeck</h1>
+        <button id="btn-modo-edicao" onclick="alternarModoEdicao()" class="absolute left-0 top-0 text-xs bg-white/5 hover:bg-white/10 text-white/70 px-3 py-1.5 rounded-lg transition">
+            🔓 Editar
+        </button>
+        <button onclick="abrirModalConexao()" class="absolute right-0 top-0 text-xs bg-white/5 hover:bg-white/10 text-white/70 px-3 py-1.5 rounded-lg transition">
+            📱 Conectar celular
+        </button>
+    </header>
+
+    <!-- Área de Conteúdo (Abas) -->
+    <main class="flex-1 flex items-center justify-center overflow-y-auto">
+
+        <!-- Aba 1: Atalhos Principais -->
+        <!-- Em pé (portrait): grade estreita e mais alta, aproveitando a altura da tela.
+             Deitado (landscape): grade larga e mais baixa, aproveitando a largura da tela. -->
+        <div id="aba-atalhos-wrapper" class="flex flex-col items-center gap-3 w-full max-w-md landscape:max-w-3xl">
+            <!-- Botões preenchidos dinamicamente por carregarAtalhos(), a partir de atalhos.json -->
+            <div id="aba-atalhos" class="grid gap-3 landscape:gap-2 justify-center w-full" style="grid-template-columns: repeat(auto-fit, minmax(5.5rem, 6.5rem));"></div>
+
+            <!-- Navegação entre páginas de atalhos (só aparece se houver mais de uma página) -->
+            <div id="paginacao-atalhos" class="hidden items-center justify-center gap-4">
+                <button onclick="mudarPaginaAtalhos(-1)" class="text-white/60 hover:text-white text-lg w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition">‹</button>
+                <span id="texto-pagina-atalhos" class="text-xs text-white/40 tabular-nums"></span>
+                <button onclick="mudarPaginaAtalhos(1)" class="text-white/60 hover:text-white text-lg w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 transition">›</button>
+            </div>
+        </div>
+
+        <!-- Aba 2: Apps Abertos (Dock dinâmico, oculta por padrão) -->
+        <div id="aba-recentes" class="hidden flex flex-col gap-2 w-full max-w-sm landscape:max-w-3xl">
+            <p class="text-xs text-white/40 mb-2">Aplicativos em Execução:</p>
+            <!-- Lista dinâmica preenchida por carregarAppsAbertos() -->
+            <div id="lista-recentes" class="flex flex-col gap-2 landscape:grid landscape:grid-cols-2 landscape:gap-2"></div>
+        </div>
+
+    </main>
+
+    <!-- Barra de Navegação Inferior (Abas) -->
+    <nav class="flex justify-around bg-white/5 backdrop-blur-md p-3 landscape:p-2 rounded-2xl border border-white/10 max-w-sm landscape:max-w-md mx-auto w-full">
+        <button onclick="mudarAba('atalhos')" class="text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10" id="btn-atalhos">Atalhos</button>
+        <button onclick="mudarAba('recentes')" class="text-xs font-medium text-white/50 px-4 py-2 rounded-xl" id="btn-recentes">Recentes / Dock</button>
+    </nav>
+
+    <!-- Modal pra adicionar um atalho novo (oculto por padrão) -->
+    <div id="modal-novo-atalho" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-10">
+        <div class="bg-zinc-900 border border-white/10 rounded-2xl p-5 w-full max-w-sm max-h-[90vh] overflow-y-auto relative">
+            <button onclick="fecharModalAdicionar()" class="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/15 text-white/60 hover:text-white text-sm transition">×</button>
+
+            <h2 id="modal-atalho-titulo" class="text-white text-sm font-medium mb-4">Novo atalho</h2>
+
+            <label class="text-xs text-white/50">Escolher programa instalado (opcional)</label>
+            <select id="select-app-instalado" onchange="preencherComAppSelecionado()" class="w-full mb-3 mt-1 p-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-white/30">
+                <option value="">Carregando lista de programas...</option>
+            </select>
+
+            <label class="text-xs text-white/50">Nome</label>
+            <input id="input-nome" type="text" placeholder="Ex: Spotify" class="w-full mb-3 mt-1 p-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-white/30">
+
+            <label class="text-xs text-white/50">Ícone (emoji)</label>
+            <input id="input-icone" type="text" placeholder="🎵" maxlength="4" class="w-full mb-2 mt-1 p-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-white/30">
+
+            <!-- Paleta de emojis prontos — clique escolhe, sem precisar digitar
+                 (no computador não tem teclado de emoji fácil como no celular). -->
+            <div class="flex flex-wrap gap-1 mb-3">
+                <button type="button" onclick="selecionarIcone('🌐')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🌐</button>
+                <button type="button" onclick="selecionarIcone('📝')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">📝</button>
+                <button type="button" onclick="selecionarIcone('💻')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">💻</button>
+                <button type="button" onclick="selecionarIcone('🎵')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🎵</button>
+                <button type="button" onclick="selecionarIcone('🎬')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🎬</button>
+                <button type="button" onclick="selecionarIcone('🎮')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🎮</button>
+                <button type="button" onclick="selecionarIcone('💬')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">💬</button>
+                <button type="button" onclick="selecionarIcone('✉️')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">✉️</button>
+                <button type="button" onclick="selecionarIcone('🗓️')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🗓️</button>
+                <button type="button" onclick="selecionarIcone('📁')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">📁</button>
+                <button type="button" onclick="selecionarIcone('📷')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">📷</button>
+                <button type="button" onclick="selecionarIcone('🧮')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🧮</button>
+                <button type="button" onclick="selecionarIcone('⚙️')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">⚙️</button>
+                <button type="button" onclick="selecionarIcone('🛠️')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🛠️</button>
+                <button type="button" onclick="selecionarIcone('📊')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">📊</button>
+                <button type="button" onclick="selecionarIcone('📚')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">📚</button>
+                <button type="button" onclick="selecionarIcone('🔗')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🔗</button>
+                <button type="button" onclick="selecionarIcone('🔒')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🔒</button>
+                <button type="button" onclick="selecionarIcone('🎨')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">🎨</button>
+                <button type="button" onclick="selecionarIcone('⭐')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/15 text-lg transition">⭐</button>
+            </div>
+
+            <label class="text-xs text-white/50">Comando (nesse computador) ou link (https://...)</label>
+            <input id="input-comando" type="text" placeholder="Ex: spotify ou https://google.com" class="w-full mb-4 mt-1 p-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm outline-none focus:border-white/30">
+
+            <div class="flex gap-2">
+                <button onclick="fecharModalAdicionar()" class="flex-1 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition">Cancelar</button>
+                <button onclick="salvarAtalho()" class="flex-1 p-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal "Conectar celular" (mostra o endereço e um QR code pra escanear) -->
+    <div id="modal-conexao" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-20">
+        <div class="bg-zinc-900 border border-white/10 rounded-2xl p-5 w-full max-w-sm text-center">
+            <h2 class="text-white text-sm font-medium mb-1">Conectar pelo celular</h2>
+            <p class="text-xs text-white/50 mb-4">Celular precisa estar na mesma rede Wi-Fi.<br>Aponte a câmera pro QR code:</p>
+
+            <img id="qr-conexao" class="mx-auto mb-4 rounded-lg bg-white p-2" width="180" height="180" alt="QR code de conexão">
+
+            <p class="text-xs text-white/40 mb-1">Ou digite no navegador do celular:</p>
+            <p id="url-conexao" class="text-sm text-white font-mono mb-4 break-all"></p>
+
+            <button onclick="fecharModalConexao()" class="w-full p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal de confirmação genérico (evita usar confirm()/alert() nativos do navegador) -->
+    <div id="modal-confirmar" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-20">
+        <div class="bg-zinc-900 border border-white/10 rounded-2xl p-5 w-full max-w-sm">
+            <p id="modal-confirmar-texto" class="text-white text-sm mb-4"></p>
+            <div class="flex gap-2">
+                <button onclick="fecharModalConfirmar()" class="flex-1 p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white text-sm transition">Cancelar</button>
+                <button id="modal-confirmar-botao-sim" class="flex-1 p-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm transition">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function mudarAba(aba) {
+            const elAtalhos = document.getElementById('aba-atalhos-wrapper');
+            const elRecentes = document.getElementById('aba-recentes');
+            const btnAtalhos = document.getElementById('btn-atalhos');
+            const btnRecentes = document.getElementById('btn-recentes');
+
+            if (aba === 'atalhos') {
+                elAtalhos.classList.remove('hidden');
+                elRecentes.classList.add('hidden');
+                btnAtalhos.className = "text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10";
+                btnRecentes.className = "text-xs font-medium text-white/50 px-4 py-2 rounded-xl";
+            } else {
+                elAtalhos.classList.add('hidden');
+                elRecentes.classList.remove('hidden');
+                btnRecentes.className = "text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10";
+                btnAtalhos.className = "text-xs font-medium text-white/50 px-4 py-2 rounded-xl";
+                carregarAppsAbertos();
+            }
+        }
+
+        function abrirModalConexao() {
+            const servidorIP = window.location.hostname;
+
+            fetch(`http://${servidorIP}:3000/conexao`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('url-conexao').textContent = data.url;
+                    document.getElementById('qr-conexao').src = `http://${servidorIP}:3000/qr`;
+                    document.getElementById('modal-conexao').classList.remove('hidden');
+                })
+                .catch(error => console.error('Erro ao buscar dados de conexão:', error));
+        }
+
+        function fecharModalConexao() {
+            document.getElementById('modal-conexao').classList.add('hidden');
+        }
+
+        // Modo edição desligado (padrão) = só o ícone, clique abre o app,
+        // sem risco de apagar/editar sem querer. Ligado = mostra lápis e ×.
+        let modoEdicaoAtivo = false;
+
+        function alternarModoEdicao() {
+            modoEdicaoAtivo = !modoEdicaoAtivo;
+            const btn = document.getElementById('btn-modo-edicao');
+            btn.textContent = modoEdicaoAtivo ? '🔒 Concluir' : '🔓 Editar';
+            btn.classList.toggle('bg-blue-600', modoEdicaoAtivo);
+            btn.classList.toggle('hover:bg-blue-500', modoEdicaoAtivo);
+            carregarAtalhos();
+        }
+
+        // Tamanho de "página" no estilo Stream Deck físico. Em pé, a grade é
+        // estreita (4 colunas) mas alta — cabem mais linhas. Deitado, a grade
+        // é larga (7 colunas) mas baixa — cabem menos linhas.
+        function atalhosPorPagina() {
+            const deitado = window.matchMedia('(orientation: landscape)').matches;
+            return deitado ? 14 : 16; // 7x2 deitado, 4x4 em pé
+        }
+
+        let paginaAtalhosAtual = 0;
+
+        function mudarPaginaAtalhos(delta) {
+            paginaAtalhosAtual = Math.max(0, paginaAtalhosAtual + delta);
+            carregarAtalhos();
+        }
+
+        // Ao girar o celular (ou redimensionar a janela), a paginação some pro
+        // valor certo de itens por página sem esperar uma ação do usuário.
+        let timerRedimensionar = null;
+        window.addEventListener('resize', () => {
+            clearTimeout(timerRedimensionar);
+            timerRedimensionar = setTimeout(carregarAtalhos, 200);
+        });
+
+        function carregarAtalhos() {
+            const servidorIP = window.location.hostname;
+
+            fetch(`http://${servidorIP}:3000/atalhos`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('aba-atalhos');
+                    container.innerHTML = '';
+
+                    // Em modo edição, o card "+ Adicionar" entra na paginação
+                    // como se fosse mais um atalho, pra sempre aparecer no final.
+                    const itens = modoEdicaoAtivo ? [...data.atalhos, { __adicionar: true }] : data.atalhos;
+
+                    const porPagina = atalhosPorPagina();
+                    const totalPaginas = Math.max(1, Math.ceil(itens.length / porPagina));
+                    if (paginaAtalhosAtual > totalPaginas - 1) paginaAtalhosAtual = totalPaginas - 1;
+                    if (paginaAtalhosAtual < 0) paginaAtalhosAtual = 0;
+
+                    const inicio = paginaAtalhosAtual * porPagina;
+                    const itensDaPagina = itens.slice(inicio, inicio + porPagina);
+
+                    itensDaPagina.forEach(item => {
+                        if (item.__adicionar) {
+                            const btnAdicionar = document.createElement('button');
+                            btnAdicionar.onclick = abrirModalAdicionar;
+                            btnAdicionar.className = "flex flex-col items-center justify-center aspect-square p-2 bg-white/5 hover:bg-white/20 active:scale-95 transition rounded-xl text-white/50 border border-dashed border-white/20";
+                            btnAdicionar.innerHTML = `
+                                <span class="text-3xl mb-1">+</span>
+                                <span class="text-[10px] font-medium tracking-wide">Adicionar</span>
+                            `;
+                            container.appendChild(btnAdicionar);
+                            return;
+                        }
+
+                        const atalho = item;
+                        const wrapper = document.createElement('div');
+                        wrapper.className = "relative";
+
+                        const btn = document.createElement('button');
+                        btn.onclick = () => tratarCliqueAtalho(atalho.id);
+                        btn.className = "flex flex-col items-center justify-center aspect-square p-2 bg-white/5 hover:bg-white/20 active:scale-95 transition rounded-xl text-white group w-full";
+                        btn.innerHTML = `
+                            <span class="text-3xl mb-1 group-hover:scale-110 transition">${atalho.icone}</span>
+                            <span class="text-[10px] font-medium tracking-wide truncate w-full text-center">${atalho.nome}</span>
+                        `;
+                        wrapper.appendChild(btn);
+
+                        if (modoEdicaoAtivo) {
+                            const btnEditar = document.createElement('button');
+                            btnEditar.onclick = (evento) => {
+                                evento.stopPropagation();
+                                abrirModalEditar(atalho.id);
+                            };
+                            btnEditar.className = "absolute -top-1.5 -left-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white text-[10px] leading-none";
+                            btnEditar.textContent = '✏️';
+
+                            const btnExcluir = document.createElement('button');
+                            btnExcluir.onclick = (evento) => {
+                                evento.stopPropagation();
+                                excluirAtalho(atalho.id, atalho.nome);
+                            };
+                            btnExcluir.className = "absolute -top-1.5 -right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-red-500/80 hover:bg-red-500 text-white text-xs leading-none";
+                            btnExcluir.textContent = '×';
+
+                            wrapper.appendChild(btnEditar);
+                            wrapper.appendChild(btnExcluir);
+                        }
+
+                        container.appendChild(wrapper);
+                    });
+
+                    // Setas de navegação — só aparecem quando há mais de uma página.
+                    const elPaginacao = document.getElementById('paginacao-atalhos');
+                    const elTextoPagina = document.getElementById('texto-pagina-atalhos');
+                    if (totalPaginas > 1) {
+                        elPaginacao.classList.remove('hidden');
+                        elPaginacao.classList.add('flex');
+                        elTextoPagina.textContent = `${paginaAtalhosAtual + 1} / ${totalPaginas}`;
+                        elPaginacao.children[0].disabled = paginaAtalhosAtual === 0;
+                        elPaginacao.children[0].classList.toggle('opacity-30', paginaAtalhosAtual === 0);
+                        elPaginacao.children[2].disabled = paginaAtalhosAtual === totalPaginas - 1;
+                        elPaginacao.children[2].classList.toggle('opacity-30', paginaAtalhosAtual === totalPaginas - 1);
+                    } else {
+                        elPaginacao.classList.add('hidden');
+                        elPaginacao.classList.remove('flex');
+                    }
+                })
+                .catch(error => console.error('Erro ao buscar atalhos:', error));
+        }
+
+        // null = criando um atalho novo; string = editando o atalho com esse id
+        let atalhoEmEdicaoId = null;
+
+        function selecionarIcone(emoji) {
+            document.getElementById('input-icone').value = emoji;
+        }
+
+        function abrirModalAdicionar() {
+            atalhoEmEdicaoId = null;
+            document.getElementById('modal-atalho-titulo').textContent = 'Novo atalho';
+            document.getElementById('input-nome').value = '';
+            document.getElementById('input-icone').value = '';
+            document.getElementById('input-comando').value = '';
+            document.getElementById('modal-novo-atalho').classList.remove('hidden');
+            carregarAppsInstalados();
+        }
+
+        function abrirModalEditar(id) {
+            atalhoEmEdicaoId = id;
+            document.getElementById('modal-atalho-titulo').textContent = 'Editar atalho';
+
+            const servidorIP = window.location.hostname;
+            fetch(`http://${servidorIP}:3000/atalhos/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('input-nome').value = data.atalho.nome;
+                    document.getElementById('input-icone').value = data.atalho.icone;
+                    document.getElementById('input-comando').value = data.atalho.comando;
+                    document.getElementById('modal-novo-atalho').classList.remove('hidden');
+                })
+                .catch(error => console.error('Erro ao buscar atalho:', error));
+
+            // Não precisa da lista de "programas instalados" pra editar, só pra criar
+            document.getElementById('select-app-instalado').innerHTML = '<option value="">— (não usado ao editar) —</option>';
+        }
+
+        function fecharModalAdicionar() {
+            document.getElementById('modal-novo-atalho').classList.add('hidden');
+        }
+
+        function carregarAppsInstalados() {
+            const servidorIP = window.location.hostname;
+            const select = document.getElementById('select-app-instalado');
+            select.innerHTML = '<option value="">Carregando lista de programas...</option>';
+
+            fetch(`http://${servidorIP}:3000/apps-instalados`)
+                .then(response => response.json())
+                .then(data => {
+                    select.innerHTML = '<option value="">— Selecione ou preencha manualmente abaixo —</option>';
+                    data.apps.forEach((appInstalado, indice) => {
+                        const option = document.createElement('option');
+                        option.value = indice;
+                        option.textContent = appInstalado.nome;
+                        option.dataset.nome = appInstalado.nome;
+                        option.dataset.comando = appInstalado.comando;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    select.innerHTML = '<option value="">Não foi possível listar os programas</option>';
+                    console.error('Erro ao buscar apps instalados:', error);
+                });
+        }
+
+        function preencherComAppSelecionado() {
+            const select = document.getElementById('select-app-instalado');
+            const opcaoSelecionada = select.options[select.selectedIndex];
+            if (!opcaoSelecionada || !opcaoSelecionada.dataset.nome) return;
+
+            document.getElementById('input-nome').value = opcaoSelecionada.dataset.nome;
+            document.getElementById('input-comando').value = opcaoSelecionada.dataset.comando;
+        }
+
+        function salvarAtalho() {
+            const campoNome = document.getElementById('input-nome');
+            const campoComando = document.getElementById('input-comando');
+            const nome = campoNome.value.trim();
+            const icone = document.getElementById('input-icone').value.trim();
+            const comando = campoComando.value.trim();
+
+            const bordaVazia = "border-red-500/70";
+            const bordaNormal = "border-white/10";
+            campoNome.classList.toggle(bordaVazia, !nome);
+            campoNome.classList.toggle(bordaNormal, !!nome);
+            campoComando.classList.toggle(bordaVazia, !comando);
+            campoComando.classList.toggle(bordaNormal, !!comando);
+
+            if (!nome || !comando) return;
+
+            const servidorIP = window.location.hostname;
+            // Editando um atalho existente usa PUT em /atalhos/<id>;
+            // criando um novo usa POST em /atalhos.
+            const url = atalhoEmEdicaoId
+                ? `http://${servidorIP}:3000/atalhos/${atalhoEmEdicaoId}`
+                : `http://${servidorIP}:3000/atalhos`;
+            const metodo = atalhoEmEdicaoId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: metodo,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome, icone, comando }),
+            })
+                .then(response => response.json())
+                .then(() => {
+                    fecharModalAdicionar();
+                    carregarAtalhos();
+                })
+                .catch(error => console.error('Erro ao salvar atalho:', error));
+        }
+
+        function excluirAtalho(id, nome) {
+            confirmarPersonalizado(`Excluir o atalho "${nome}"?`, () => {
+                const servidorIP = window.location.hostname;
+
+                fetch(`http://${servidorIP}:3000/atalhos/${id}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(() => carregarAtalhos())
+                    .catch(error => console.error('Erro ao excluir atalho:', error));
+            });
+        }
+
+        // Substitui o confirm() nativo do navegador por um modal próprio da
+        // página (o confirm() nativo trava a automação usada pra testar o
+        // app, além de destoar visualmente do resto da interface).
+        function confirmarPersonalizado(mensagem, aoConfirmar, textoBotao = 'Excluir') {
+            document.getElementById('modal-confirmar-texto').textContent = mensagem;
+            const modal = document.getElementById('modal-confirmar');
+            const botaoSim = document.getElementById('modal-confirmar-botao-sim');
+            botaoSim.textContent = textoBotao;
+
+            botaoSim.onclick = () => {
+                fecharModalConfirmar();
+                aoConfirmar();
+            };
+
+            modal.classList.remove('hidden');
+        }
+
+        function fecharModalConfirmar() {
+            document.getElementById('modal-confirmar').classList.add('hidden');
+        }
+
+        function enviarComando(appName) {
+            // Descobre automaticamente se está rodando no PC ou no celular na mesma rede
+            const servidorIP = window.location.hostname;
+
+            fetch(`http://${servidorIP}:3000/launch/${appName}`)
+                .then(response => response.json())
+                .then(data => console.log('Comando disparado com sucesso:', data))
+                .catch(error => console.error('Falha na comunicação com o servidor:', error));
+        }
+
+        // Diferencia clique único de clique duplo num atalho: 1 clique abre
+        // um programa novo (como sempre foi); 2 cliques minimizam ou trazem
+        // de volta o programa que esse atalho já abriu, se houver um aberto.
+        const timersCliqueAtalho = {};
+        function tratarCliqueAtalho(atalhoId) {
+            if (timersCliqueAtalho[atalhoId]) {
+                clearTimeout(timersCliqueAtalho[atalhoId]);
+                delete timersCliqueAtalho[atalhoId];
+                toggleMinimizarAtalho(atalhoId);
+            } else {
+                timersCliqueAtalho[atalhoId] = setTimeout(() => {
+                    delete timersCliqueAtalho[atalhoId];
+                    enviarComando(atalhoId);
+                }, 300);
+            }
+        }
+
+        function toggleMinimizarAtalho(atalhoId) {
+            const servidorIP = window.location.hostname;
+            fetch(`http://${servidorIP}:3000/toggle-minimizar-atalho/${atalhoId}`)
+                .then(response => response.json())
+                .then(data => console.log('Toggle minimizar/restaurar:', data.acao))
+                .catch(error => console.error('Erro ao minimizar/restaurar:', error));
+        }
+
+        function carregarAppsAbertos() {
+            const servidorIP = window.location.hostname;
+
+            fetch(`http://${servidorIP}:3000/apps-abertos`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('lista-recentes');
+                    container.innerHTML = '';
+
+                    data.apps.forEach(appAberto => {
+                        // Clicar no título restaura/foca a janela (mesmo minimizada).
+                        // Os botões continuam separados pra minimizar e fechar.
+                        const item = document.createElement('div');
+                        item.className = "p-3 bg-white/5 rounded-xl text-sm flex justify-between items-center text-white gap-2 w-full";
+                        item.innerHTML = `
+                            <button title="Trazer para frente" class="truncate text-left hover:text-blue-300 transition">${appAberto.titulo}</button>
+                            <span class="flex gap-1 shrink-0">
+                                <button title="Minimizar" class="w-7 h-7 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 transition">─</button>
+                                <button title="Fechar" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/20 hover:bg-red-500/40 text-red-300 transition">✕</button>
+                            </span>
+                        `;
+                        const [btnTitulo, btnMinimizar, btnFechar] = item.querySelectorAll('button');
+                        btnTitulo.onclick = () => ativarJanela(appAberto.id);
+                        btnMinimizar.onclick = () => minimizarJanela(appAberto.id);
+                        btnFechar.onclick = () => fecharJanela(appAberto.id, appAberto.titulo);
+                        container.appendChild(item);
+                    });
+                })
+                .catch(error => console.error('Erro ao buscar apps abertos:', error));
+        }
+
+        function ativarJanela(id) {
+            const servidorIP = window.location.hostname;
+            fetch(`http://${servidorIP}:3000/ativar/${encodeURIComponent(id)}`)
+                .catch(error => console.error('Erro ao ativar janela:', error));
+        }
+
+        function minimizarJanela(id) {
+            const servidorIP = window.location.hostname;
+            fetch(`http://${servidorIP}:3000/minimizar/${encodeURIComponent(id)}`)
+                .catch(error => console.error('Erro ao minimizar janela:', error));
+        }
+
+        function fecharJanela(id, titulo) {
+            confirmarPersonalizado(`Fechar "${titulo}"?`, () => {
+                const servidorIP = window.location.hostname;
+                fetch(`http://${servidorIP}:3000/fechar/${encodeURIComponent(id)}`)
+                    .then(() => carregarAppsAbertos())
+                    .catch(error => console.error('Erro ao fechar janela:', error));
+            }, 'Fechar');
+        }
+
+        // Monta a aba "Atalhos" assim que a página carrega
+        carregarAtalhos();
+
+        // Escuta o servidor por avisos de que a lista de atalhos mudou (em
+        // outro celular, janela, etc.) e recarrega sozinho, sem precisar
+        // que o usuário dê refresh manual. Se a conexão cair, o próprio
+        // EventSource tenta reconectar automaticamente.
+        (function conectarEventos() {
+            const servidorIP = window.location.hostname;
+            const eventos = new EventSource(`http://${servidorIP}:3000/eventos`);
+            eventos.addEventListener('atalhos-atualizados', () => {
+                carregarAtalhos();
+            });
+        })();
+    </script>
+</body>
+</html>

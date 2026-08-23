@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Deck Modular (Python)</title>
+    <!-- Tailwind CSS via CDN para estilização moderna e design limpo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 h-screen flex flex-col justify-between select-none text-white p-4">
+
+    <!-- Cabeçalho -->
+    <header class="text-center py-2">
+        <h1 class="text-sm font-medium text-white/60 tracking-wider">Stream Deck Mobile (Python Backend)</h1>
+    </header>
+
+    <!-- Área de Conteúdo (Abas) -->
+    <main class="flex-1 flex items-center justify-center">
+
+        <!-- Aba 1: Atalhos Principais -->
+        <div id="aba-atalhos" class="grid grid-cols-2 gap-4 max-w-sm w-full">
+            <button onclick="enviarComando('firefox')" class="flex flex-col items-center justify-center p-5 bg-white/5 hover:bg-white/20 active:scale-95 transition rounded-2xl text-white group">
+                <span class="text-3xl mb-2 group-hover:scale-110 transition">🌐</span>
+                <span class="text-sm font-medium tracking-wide">Navegador</span>
+            </button>
+            <button onclick="enviarComando('gedit')" class="flex flex-col items-center justify-center p-5 bg-white/5 hover:bg-white/20 active:scale-95 transition rounded-2xl text-white group">
+                <span class="text-3xl mb-2 group-hover:scale-110 transition">📝</span>
+                <span class="text-sm font-medium tracking-wide">Editor</span>
+            </button>
+        </div>
+
+        <!-- Aba 2: Apps Abertos (Dock dinâmico, oculta por padrão) -->
+        <div id="aba-recentes" class="hidden flex flex-col gap-2 max-w-sm w-full">
+            <p class="text-xs text-white/40 mb-2">Aplicativos em Execução:</p>
+            <!-- Lista dinâmica preenchida por carregarAppsAbertos() -->
+            <div id="lista-recentes" class="flex flex-col gap-2"></div>
+        </div>
+
+    </main>
+
+    <!-- Barra de Navegação Inferior (Abas) -->
+    <nav class="flex justify-around bg-white/5 backdrop-blur-md p-3 rounded-2xl border border-white/10 max-w-sm mx-auto w-full">
+        <button onclick="mudarAba('atalhos')" class="text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10" id="btn-atalhos">Atalhos</button>
+        <button onclick="mudarAba('recentes')" class="text-xs font-medium text-white/50 px-4 py-2 rounded-xl" id="btn-recentes">Recentes / Dock</button>
+    </nav>
+
+    <script>
+        function mudarAba(aba) {
+            const elAtalhos = document.getElementById('aba-atalhos');
+            const elRecentes = document.getElementById('aba-recentes');
+            const btnAtalhos = document.getElementById('btn-atalhos');
+            const btnRecentes = document.getElementById('btn-recentes');
+
+            if (aba === 'atalhos') {
+                elAtalhos.classList.remove('hidden');
+                elRecentes.classList.add('hidden');
+                btnAtalhos.className = "text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10";
+                btnRecentes.className = "text-xs font-medium text-white/50 px-4 py-2 rounded-xl";
+            } else {
+                elAtalhos.classList.add('hidden');
+                elRecentes.classList.remove('hidden');
+                btnRecentes.className = "text-xs font-medium text-white px-4 py-2 rounded-xl bg-white/10";
+                btnAtalhos.className = "text-xs font-medium text-white/50 px-4 py-2 rounded-xl";
+                carregarAppsAbertos();
+            }
+        }
+
+        function enviarComando(appName) {
+            // Descobre dinamicamente se está rodando no PC local ou via celular na rede
+            const servidorIP = window.location.hostname;
+
+            // Faz a requisição assíncrona para o servidor Flask
+            fetch(`http://${servidorIP}:5000/launch/${appName}`)
+                .then(response => response.json())
+                .then(data => console.log('Comando disparado:', data))
+                .catch(error => console.error('Erro na requisição:', error));
+        }
+
+        function carregarAppsAbertos() {
+            const servidorIP = window.location.hostname;
+
+            fetch(`http://${servidorIP}:5000/apps-abertos`)
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('lista-recentes');
+                    container.innerHTML = '';
+
+                    data.apps.forEach(appName => {
+                        const btn = document.createElement('button');
+                        btn.className = "p-3 bg-white/5 hover:bg-white/20 rounded-xl text-sm flex justify-between items-center text-white transition w-full";
+                        btn.innerHTML = `<span>${appName}</span> <span class="text-xs text-white/40">Ativo</span>`;
+                        btn.onclick = () => enviarComando(appName);
+                        container.appendChild(btn);
+                    });
+                })
+                .catch(error => console.error('Erro ao buscar apps abertos:', error));
+        }
+    </script>
+</body>
+</html>

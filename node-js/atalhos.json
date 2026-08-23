@@ -1,0 +1,48 @@
+[
+  {
+    "id": "navegador",
+    "nome": "Navegador",
+    "icone": "🌐",
+    "comando": {
+      "win32": "start msedge",
+      "darwin": "open -a Safari",
+      "linux": "firefox"
+    }
+  },
+  {
+    "id": "editor",
+    "nome": "Editor",
+    "icone": "📝",
+    "comando": {
+      "win32": "notepad",
+      "darwin": "open -e",
+      "linux": "gedit"
+    }
+  },
+  {
+    "id": "calculadora",
+    "nome": "Calculadora",
+    "icone": "🧮",
+    "comando": {
+      "win32": "calc",
+      "darwin": "open -a Calculator",
+      "linux": "gnome-calculator"
+    }
+  },
+  {
+    "id": "calculator",
+    "nome": "Calculator",
+    "icone": "🧮",
+    "comando": {
+      "linux": "gnome-calculator"
+    }
+  },
+  {
+    "id": "devin",
+    "nome": "Devin",
+    "icone": "🔗",
+    "comando": {
+      "linux": "/usr/share/devin-desktop/devin-desktop"
+    }
+  }
+]

@@ -1,0 +1,13 @@
+# Dependências instaladas via npm — reinstaláveis com 'npm install'
+node-js/node_modules/
+
+# Build do app nativo (Tauri) — pode ser gigante e é gerado a partir do código
+node-js/src-tauri/target/
+node-js/src-tauri/gen/schemas/
+
+# Executáveis empacotados (.exe, etc.) — artefatos de build, não código-fonte
+node-js/dist/
+
+# Arquivos de sistema/editor
+.DS_Store
+*.log

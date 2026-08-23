@@ -1,0 +1,28 @@
+{
+  "name": "quickdeck",
+  "version": "1.0.0",
+  "description": "Painel de atalhos remoto (celular -> computador) via rede local.",
+  "main": "server.js",
+  "bin": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "build:win": "pkg . --targets node18-win-x64 --output dist/QuickDeck.exe"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.22.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "index.html",
+      "favicon.png"
+    ]
+  }
+}
