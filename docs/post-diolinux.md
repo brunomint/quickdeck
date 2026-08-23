@@ -4,9 +4,8 @@ Fala, pessoal!
 
 Queria compartilhar um projeto pessoal que fui construindo aos poucos:
 o **QuickDeck**, um painel de atalhos remoto que transforma o celular num
-controle pro computador — a ideia é parecida com a de um Stream Deck físico
-(aquele teclado de botões programáveis que streamer usa), só que sem
-comprar nenhum hardware.
+controle pro computador — a ideia é parecida com a de um Stream Deck físico,
+só que sem comprar nenhum hardware.
 
 ![QuickDeck](screenshot.png)
 
@@ -14,8 +13,7 @@ comprar nenhum hardware.
 
 O QuickDeck sobe um servidor na sua rede local. Você abre o app no PC,
 escaneia um QR code com o celular, e pronto — os botões que aparecem na tela
-do celular disparam comandos no computador. Tudo pela mesma rede Wi-Fi, sem
-depender de internet, conta ou serviço de terceiros.
+do celular disparam comandos no computador. Tudo pela mesma rede Wi-Fi.
 
 ![Conectar pelo celular](screenshot-conectar.png)
 
@@ -58,3 +56,6 @@ Código aberto (MIT) e instaladores das três plataformas aqui:
 É um projeto bem novo e feito nas horas vagas, então esperem arestas — mas
 funciona, e adoraria ouvir sugestões, bugs, ou só a opinião de vocês sobre a
 ideia.
+
+Alguém aqui já usa alguma alternativa parecida ou tem sugestão de alguma
+funcionalidade que seria essencial?
