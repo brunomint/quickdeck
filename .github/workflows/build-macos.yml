@@ -1,0 +1,54 @@
+name: Build macOS Installer
+
+# Roda numa máquina Mac de verdade fornecida pelo GitHub — o instalador do
+# Tauri (.app/.dmg) precisa do Xcode/toolchain da Apple, que só existe no
+# macOS de verdade.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Instalar Rust (Intel + Apple Silicon, pra gerar um binário universal)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache do Cargo (acelera builds seguintes)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            node-js/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('node-js/src-tauri/Cargo.lock') }}
+
+      - name: Instalar dependências do Node
+        working-directory: node-js
+        run: npm install
+
+      - name: Instalar o Tauri CLI
+        run: cargo install tauri-cli --version "^2" --locked
+
+      - name: Compilar o instalador do QuickDeck (universal: Intel + Apple Silicon)
+        working-directory: node-js
+        run: cargo tauri build --target universal-apple-darwin
+
+      - name: Publicar o instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: QuickDeck-macOS-Installer
+          path: node-js/src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
