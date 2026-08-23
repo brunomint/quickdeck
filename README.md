@@ -38,8 +38,9 @@ camada de segurança com token de emparelhamento.
   paginação estilo Stream Deck físico quando há muitos atalhos.
 - **Modo de edição** — os controles de editar/apagar ficam escondidos por
   padrão, evitando toques acidentais; só aparecem quando você "destrava".
-- **Emparelhamento por token** — só quem escaneou o QR code (ou está no
-  próprio computador) consegue disparar ações — sem senha pra decorar.
+- **Emparelhamento por token** — pra que apenas dispositivos autorizados pelo
+  QR code (ou o próprio computador) possam disparar ações — sem senha pra
+  decorar.
 
 ## Como instalar
 

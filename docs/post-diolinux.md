@@ -2,10 +2,13 @@
 
 Fala, pessoal!
 
-Queria compartilhar um projeto pessoal que fui construindo aos poucos:
-o **QuickDeck**, um painel de atalhos remoto que transforma o celular num
-controle pro computador — a ideia é parecida com a de um Stream Deck físico,
-só que sem comprar nenhum hardware.
+Um colega me mandou um vídeo de uma pessoa mostrando o sistema de um Stream
+Deck que ela tinha criado. Vi que não tinha disponibilizado o código.
+Gostei da ideia e resolvi criar um do zero.
+
+Assim nasceu o **QuickDeck**, um painel de atalhos remoto que transforma o
+celular num controle pro computador — a ideia é parecida com a de um Stream
+Deck físico, só que sem comprar nenhum hardware.
 
 ![QuickDeck](screenshot.png)
 
@@ -33,8 +36,8 @@ Alguns recursos que fui adicionando no caminho:
   Stream Deck físico
 - Modo de edição — os controles de apagar/editar ficam escondidos até você
   destravar, pra evitar toque acidental
-- Emparelhamento por token, então só quem escaneou o QR consegue mandar
-  comandos
+- Emparelhamento por token, pra que apenas dispositivos autorizados pelo QR
+  possam enviar comandos
 
 ## Linux em primeiro lugar (bom, quase)
 
@@ -44,9 +47,10 @@ detecta a distro sozinho e resolve as dependências (`wmctrl`/`xdotool`, só
 usados pra gerenciar janelas). Testei no Pop!_OS; feedback de quem usa outra
 distro é muito bem-vindo.
 
-O app em si é feito com [Tauri](https://tauri.app/) (Rust) em vez de
-Electron — bem mais leve. O backend é Node.js/Express, e a interface é
-HTML/JS puro com Tailwind, sem build step nenhum.
+O app em si é feito com [Tauri](https://tauri.app/) (Rust), em vez de
+Electron, justamente pra manter o cliente mais enxuto. O backend é
+Node.js/Express, e a interface é HTML/JS puro com Tailwind, sem build step
+nenhum.
 
 ## Onde pegar
 
