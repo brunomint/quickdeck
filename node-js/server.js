@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Permite servir os arquivos estáticos da mesma pasta (como o nosso HTML)
-app.use(express.static(path.join(__dirname, '.')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // --- Server-Sent Events: avisa todo mundo conectado (celular, outras
 // janelas) quando a lista de atalhos muda, pra atualizarem sozinhos sem

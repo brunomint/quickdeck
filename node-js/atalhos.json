@@ -30,17 +30,9 @@
     }
   },
   {
-    "id": "calculator",
-    "nome": "Calculator",
-    "icone": "🧮",
-    "comando": {
-      "linux": "gnome-calculator"
-    }
-  },
-  {
     "id": "devin",
     "nome": "Devin",
-    "icone": "🔗",
+    "icone": "🛠️",
     "comando": {
       "linux": "/usr/share/devin-desktop/devin-desktop"
     }
