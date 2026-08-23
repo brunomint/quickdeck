@@ -50,8 +50,10 @@ HTML/JS puro com Tailwind, sem build step nenhum.
 
 ## Onde pegar
 
-Código aberto (MIT) e instaladores das três plataformas aqui:
-**https://github.com/brunomint/quickdeck**
+Código aberto (MIT) aqui: **https://github.com/brunomint/quickdeck**
+
+Pra baixar os instaladores prontos (Windows, macOS e Linux) direto:
+**https://github.com/brunomint/quickdeck/releases/latest**
 
 É um projeto bem novo e feito nas horas vagas, então esperem arestas — mas
 funciona, e adoraria ouvir sugestões, bugs, ou só a opinião de vocês sobre a
