@@ -28,6 +28,9 @@ Alguns recursos que fui adicionando no caminho:
   próprio celular
 
   ![Dock de janelas abertas](screenshot-dock.png)
+- Clique único no ícone abre um programa novo; dois cliques rápidos no mesmo
+  ícone minimizam a janela dele ou trazem de volta se já estiver minimizada
+  — sem precisar trocar de aba
 - Layout que se adapta ao celular em pé ou deitado, com paginação estilo
   Stream Deck físico
 - Modo de edição — os controles de apagar/editar ficam escondidos até você

@@ -30,6 +30,10 @@ camada de segurança com token de emparelhamento.
   ou feche direto pelo celular.
 
   ![Dock de janelas abertas](docs/screenshot-dock.png)
+- **Clique único abre, duplo clique minimiza/restaura** — na própria aba de
+  atalhos, um clique sempre abre um programa novo; dois cliques rápidos no
+  mesmo ícone minimizam a janela dele (se estiver aberta) ou trazem de volta
+  (se já estiver minimizada) — sem precisar trocar de aba.
 - **Layout responsivo** — a grade se adapta ao celular em pé ou deitado, com
   paginação estilo Stream Deck físico quando há muitos atalhos.
 - **Modo de edição** — os controles de editar/apagar ficam escondidos por
