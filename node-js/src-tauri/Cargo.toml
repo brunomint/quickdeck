@@ -1,6 +1,6 @@
 [package]
 name = "quickdeck"
-version = "1.0.0"
+version = "1.0.1"
 description = "QuickDeck — painel de atalhos remoto (celular -> computador) via rede local"
 authors = ["Bruno Fragoso"]
 license = ""
