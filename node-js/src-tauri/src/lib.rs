@@ -2,6 +2,15 @@ use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use tauri::Manager;
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+// O servidor compilado com 'pkg' é um executável de console — sem essa
+// flag, o Windows abre uma janela de console preta pra ele junto com o
+// app, mesmo ele rodando em segundo plano.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
 // Guarda o processo do servidor pra podermos matá-lo quando a janela do
 // app fechar — sem isso, ele continua rodando escondido em segundo plano
 // depois que o usuário fecha o QuickDeck.
@@ -44,11 +53,17 @@ pub fn run() {
       let nome_servidor = if cfg!(windows) { "servidor.exe" } else { "servidor" };
       let caminho_servidor = pasta_exe.join(nome_servidor);
 
-      let child = Command::new(&caminho_servidor)
+      let mut comando = Command::new(&caminho_servidor);
+      comando
         .current_dir(&dir_dados)
         .env("QUICKDECK_DATA_DIR", dir_dados.to_string_lossy().to_string())
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .stderr(Stdio::null());
+
+      #[cfg(windows)]
+      comando.creation_flags(CREATE_NO_WINDOW);
+
+      let child = comando
         .spawn()
         .expect("Falha ao iniciar o servidor do QuickDeck");
 
