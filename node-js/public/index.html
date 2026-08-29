@@ -149,6 +149,19 @@
             return token ? { 'X-QuickDeck-Token': token } : {};
         }
 
+        // Dentro do app desktop (Tauri), a página carrega pelo protocolo
+        // interno dele (ex: tauri.localhost), não por http://localhost:3000
+        // — nesse caso window.location.hostname não aponta pro servidor de
+        // verdade. Quando acessado de outro dispositivo (celular, via IP na
+        // rede local), o hostname já vem correto e deve ser usado como está.
+        function obterServidorIP() {
+            const host = window.location.hostname;
+            if (!host || host === 'localhost' || host.endsWith('.localhost')) {
+                return 'localhost';
+            }
+            return host;
+        }
+
         function mudarAba(aba) {
             const elAtalhos = document.getElementById('aba-atalhos-wrapper');
             const elRecentes = document.getElementById('aba-recentes');
@@ -170,7 +183,7 @@
         }
 
         function abrirModalConexao() {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
 
             fetch(`http://${servidorIP}:3000/conexao`)
                 .then(response => response.json())
@@ -223,7 +236,7 @@
         });
 
         function carregarAtalhos() {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
 
             fetch(`http://${servidorIP}:3000/atalhos`)
                 .then(response => response.json())
@@ -343,7 +356,7 @@
             atalhoEmEdicaoId = id;
             document.getElementById('modal-atalho-titulo').textContent = 'Editar atalho';
 
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             fetch(`http://${servidorIP}:3000/atalhos/${id}`)
                 .then(response => response.json())
                 .then(data => {
@@ -363,7 +376,7 @@
         }
 
         function carregarAppsInstalados() {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             const select = document.getElementById('select-app-instalado');
             select.innerHTML = '<option value="">Carregando lista de programas...</option>';
 
@@ -411,7 +424,7 @@
 
             if (!nome || !comando) return;
 
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             // Editando um atalho existente usa PUT em /atalhos/<id>;
             // criando um novo usa POST em /atalhos.
             const url = atalhoEmEdicaoId
@@ -434,7 +447,7 @@
 
         function excluirAtalho(id, nome) {
             confirmarPersonalizado(`Excluir o atalho "${nome}"?`, () => {
-                const servidorIP = window.location.hostname;
+                const servidorIP = obterServidorIP();
 
                 fetch(`http://${servidorIP}:3000/atalhos/${id}`, { method: 'DELETE', headers: cabecalhosAutorizacao() })
                     .then(response => response.json())
@@ -466,7 +479,7 @@
 
         function enviarComando(appName) {
             // Descobre automaticamente se está rodando no PC ou no celular na mesma rede
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
 
             fetch(`http://${servidorIP}:3000/launch/${appName}`, { headers: cabecalhosAutorizacao() })
                 .then(response => response.json())
@@ -492,7 +505,7 @@
         }
 
         function toggleMinimizarAtalho(atalhoId) {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             fetch(`http://${servidorIP}:3000/toggle-minimizar-atalho/${atalhoId}`, { headers: cabecalhosAutorizacao() })
                 .then(response => response.json())
                 .then(data => console.log('Toggle minimizar/restaurar:', data.acao))
@@ -500,7 +513,7 @@
         }
 
         function carregarAppsAbertos() {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
 
             fetch(`http://${servidorIP}:3000/apps-abertos`)
                 .then(response => response.json())
@@ -550,20 +563,20 @@
         }
 
         function ativarJanela(id) {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             fetch(`http://${servidorIP}:3000/ativar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                 .catch(error => console.error('Erro ao ativar janela:', error));
         }
 
         function minimizarJanela(id) {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             fetch(`http://${servidorIP}:3000/minimizar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                 .catch(error => console.error('Erro ao minimizar janela:', error));
         }
 
         function fecharJanela(id, titulo) {
             confirmarPersonalizado(`Fechar "${titulo}"?`, () => {
-                const servidorIP = window.location.hostname;
+                const servidorIP = obterServidorIP();
                 fetch(`http://${servidorIP}:3000/fechar/${encodeURIComponent(id)}`, { headers: cabecalhosAutorizacao() })
                     .then(() => carregarAppsAbertos())
                     .catch(error => console.error('Erro ao fechar janela:', error));
@@ -578,7 +591,7 @@
         // que o usuário dê refresh manual. Se a conexão cair, o próprio
         // EventSource tenta reconectar automaticamente.
         (function conectarEventos() {
-            const servidorIP = window.location.hostname;
+            const servidorIP = obterServidorIP();
             const eventos = new EventSource(`http://${servidorIP}:3000/eventos`);
             eventos.addEventListener('atalhos-atualizados', () => {
                 carregarAtalhos();
