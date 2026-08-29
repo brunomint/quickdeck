@@ -1,6 +1,6 @@
 {
   "name": "quickdeck",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Painel de atalhos remoto (celular -> computador) via rede local.",
   "main": "server.js",
   "bin": "server.js",
